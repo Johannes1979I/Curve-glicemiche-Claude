@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refertazione Curve Glicemiche e Insulinemiche</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect x='2' y='2' width='32' height='32' rx='8' fill='%232d5a3d'/><path d='M8 26L12 18L16 22L22 10L28 16' stroke='white' stroke-width='2.5' fill='none'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="32" height="32" rx="8" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M8 26 L12 18 L16 22 L22 10 L28 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="12" cy="18" r="2" fill="white"/>
+    <circle cx="22" cy="10" r="2" fill="white"/>
+  </svg>
+  <div>
+    <h1>Curve Glicemiche & Insulinemiche</h1>
+    <div class="subtitle">Sistema di refertazione con grafici e generazione report PDF</div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- TABS -->
+  <div class="section-tabs">
+    <button class="section-tab active" onclick="showSection('setup')">① Configurazione</button>
+    <button class="section-tab" onclick="showSection('data')">② Inserimento Dati</button>
+    <button class="section-tab" onclick="showSection('results')">③ Risultati e Grafici</button>
+    <button class="section-tab" onclick="showSection('pdf')">④ Genera PDF</button>
+    <button class="section-tab" onclick="showSection('archive')">⑤ Archivio</button>
+  </div>
+
+  <!-- ═══════════ SECTION: SETUP ═══════════ -->
+  <div id="section-setup" class="fade-in">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--primary-pale);color:var(--primary)">👤</div>
+        <h2>Dati Paziente</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid-4">
+          <div class="form-group"><label>Cognome</label><input type="text" id="pt-cognome" placeholder="Rossi"></div>
+          <div class="form-group"><label>Nome</label><input type="text" id="pt-nome" placeholder="Mario"></div>
+          <div class="form-group"><label>Data di nascita</label><input type="date" id="pt-dob"></div>
+          <div class="form-group"><label>Sesso</label><select id="pt-sesso"><option value="M">Maschio</option><option value="F">Femmina</option></select></div>
+        </div>
+        <div class="grid-4" style="margin-top:12px">
+          <div class="form-group"><label>Codice Fiscale</label><input type="text" id="pt-cf" placeholder="RSSMRA80A01H501Z" style="text-transform:uppercase"></div>
+          <div class="form-group"><label>Data Esame</label><input type="date" id="pt-data-esame"></div>
+          <div class="form-group"><label>Medico Richiedente</label><input type="text" id="pt-medico" placeholder="Dott. ..."></div>
+          <div class="form-group"><label>N° Accettazione</label><input type="text" id="pt-accettazione" placeholder="ACC-2026-001"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--accent-pale);color:var(--accent)">📋</div>
+        <h2>Seleziona Tipo di Curva (Preset)</h2>
+      </div>
+      <div class="card-body">
+        <div class="preset-grid" id="preset-grid"></div>
+        <div class="divider"></div>
+        <div class="toggle-row">
+          <label class="toggle-switch"><input type="checkbox" id="toggle-pregnant" onchange="togglePregnant()"><span class="toggle-slider"></span></label>
+          <span style="font-weight:500">Valori di riferimento per donna in gravidanza</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-switch"><input type="checkbox" id="toggle-combined" onchange="toggleCombined()"><span class="toggle-slider"></span></label>
+          <span style="font-weight:500">Curva combinata Glicemica + Insulinemica</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#e8e0f0;color:#6b3fa0">⚙️</div>
+        <h2>Personalizza Configurazione</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid-3">
+          <div class="form-group"><label>Carico di glucosio (g)</label><input type="number" id="cfg-glucose-load" value="75" min="25" max="100"></div>
+          <div class="form-group"><label>Unità Glicemia</label><select id="cfg-glyc-unit"><option value="mg/dl">mg/dL</option><option value="mmol/L">mmol/L</option></select></div>
+          <div class="form-group"><label>Unità Insulinemia</label><select id="cfg-ins-unit"><option value="µUI/mL">µUI/mL</option><option value="pmol/L">pmol/L</option></select></div>
+        </div>
+        <div style="margin-top:16px">
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px">Tempi di prelievo (minuti, separati da virgola)</label>
+          <div class="grid-2" style="margin-top:6px">
+            <div class="form-group"><label style="text-transform:none;font-size:13px">Curva Glicemica</label><input type="text" id="cfg-glyc-times" placeholder="0, 30, 60, 90, 120"></div>
+            <div class="form-group"><label style="text-transform:none;font-size:13px">Curva Insulinemica</label><input type="text" id="cfg-ins-times" placeholder="0, 30, 60, 90, 120"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-outline btn-sm" onclick="toggleRefEdit()">✏️ Modifica Valori di Riferimento</button></div>
+        <div id="ref-edit-panel" class="hidden" style="margin-top:16px">
+          <div class="grid-2">
+            <div><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--primary)">Glicemia (mg/dL)</h3><div id="ref-glyc-editor"></div></div>
+            <div><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--primary)">Insulinemia (µUI/mL)</h3><div id="ref-ins-editor"></div></div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-primary btn-sm" onclick="applyRefChanges()">Applica Modifiche</button>
+            <button class="btn btn-outline btn-sm" onclick="resetRefs()">Ripristina Default</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-primary btn-lg" onclick="proceedToData()">Prosegui all'inserimento dati →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SECTION: DATA ═══════════ -->
+  <div id="section-data" class="hidden fade-in">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--primary-pale);color:var(--primary)">🔬</div>
+        <h2>Inserimento Valori — <span id="data-curve-title"></span></h2>
+      </div>
+      <div class="card-body">
+        <div id="data-glyc-section">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;color:var(--primary)">Curva Glicemica</h3>
+          <table class="data-table" id="data-glyc-table"><thead><tr><th>Tempo</th><th>Risultato</th><th>Val. Rif.</th><th>Stato</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div id="data-ins-section" style="margin-top:24px">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;color:var(--accent)">Curva Insulinemica</h3>
+          <table class="data-table" id="data-ins-table"><thead><tr><th>Tempo</th><th>Risultato</th><th>Val. Rif.</th><th>Stato</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="divider"></div>
+        <div class="form-group">
+          <label>Metodica / Note Tecniche</label>
+          <textarea id="methodology" class="methodology-input" placeholder="Es: Metodica enzimatica (esochinasi) per glicemia...">Glicemia: Metodo enzimatico (Esochinasi/G6PDH) - Fotometria UV
+Insulina: Immunodosaggio in Chemiluminescenza (CLIA)
+Carico: 75g di glucosio anidro in 250-300 mL di acqua</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-outline" onclick="showSection('setup')">← Torna alla configurazione</button>
+      <button class="btn btn-primary btn-lg" onclick="proceedToResults()">Calcola e visualizza risultati →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SECTION: RESULTS ═══════════ -->
+  <div id="section-results" class="hidden fade-in">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--success-pale);color:var(--success)">📊</div>
+        <h2>Grafico Curva Glicemica</h2>
+      </div>
+      <div class="card-body"><div class="chart-container" id="glyc-chart-container"><canvas id="glycChart"></canvas></div></div>
+    </div>
+    <div class="card" id="ins-chart-card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--accent-pale);color:var(--accent)">📈</div>
+        <h2>Grafico Curva Insulinemica</h2>
+      </div>
+      <div class="card-body"><div class="chart-container" id="ins-chart-container"><canvas id="insChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--primary-pale);color:var(--primary)">📝</div>
+        <h2>Riepilogo Risultati</h2>
+      </div>
+      <div class="card-body">
+        <div class="toggle-row" style="margin-bottom:16px;padding:10px 14px;background:var(--surface-alt);border-radius:8px;border:1px solid var(--border-light)">
+          <label class="toggle-switch"><input type="checkbox" id="show-interp-results" checked onchange="toggleInterpretationView()"><span class="toggle-slider"></span></label>
+          <span style="font-weight:500">Mostra interpretazione diagnostica nei risultati</span>
+        </div>
+        <div id="results-summary-content"></div>
+      </div>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-outline" onclick="showSection('data')">← Modifica dati</button>
+      <button class="btn btn-primary btn-lg" onclick="showSection('pdf')">Prepara PDF →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SECTION: PDF ═══════════ -->
+  <div id="section-pdf" class="hidden fade-in">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--accent-pale);color:var(--accent)">🖼️</div>
+        <h2>Intestazione (Logo / Header)</h2>
+      </div>
+      <div class="card-body">
+        <div class="header-upload" id="header-upload-area" onclick="document.getElementById('header-file').click()">
+          <input type="file" id="header-file" accept="image/*" style="display:none" onchange="handleHeaderUpload(event)">
+          <div id="upload-placeholder">
+            <div style="font-size:28px;margin-bottom:8px">📤</div>
+            <div style="font-weight:500;color:var(--text-secondary)">Clicca per caricare l'immagine di intestazione</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">JPG, PNG — Consigliato 800×120 px</div>
+          </div>
+          <img id="header-preview" class="hidden">
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+          <div class="toggle-row">
+            <label class="toggle-switch"><input type="checkbox" id="toggle-save-settings" onchange="onSaveToggleChange()"><span class="toggle-slider"></span></label>
+            <span style="font-weight:500;font-size:13px">Salva impostazioni come default</span>
+            <span id="save-status" style="margin-left:8px"></span>
+          </div>
+          <button class="btn btn-outline btn-sm" id="btn-remove-header" onclick="removeHeader()" style="display:none">Rimuovi intestazione</button>
+        </div>
+        <div style="margin-top:6px;padding:8px 12px;background:var(--surface-alt);border-radius:6px;font-size:11px;color:var(--text-muted)">
+          💡 Con "Salva impostazioni" attivo, l'intestazione caricata, il titolo referto, la metodica e le unità di misura verranno ricordati automaticamente alla prossima apertura.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--primary-pale);color:var(--primary)">📄</div>
+        <h2>Anteprima e Generazione PDF</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="form-group"><label>Titolo Referto</label><input type="text" id="pdf-title" value="Referto Curva da Carico Orale di Glucosio"></div>
+          <div class="form-group"><label>Note aggiuntive per il referto</label><input type="text" id="pdf-notes" placeholder="Note opzionali..."></div>
+        </div>
+        <div class="toggle-row" style="margin-top:12px">
+          <label class="toggle-switch"><input type="checkbox" id="pdf-include-graph" checked><span class="toggle-slider"></span></label>
+          <span style="font-weight:500">Includi grafici nel PDF</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-switch"><input type="checkbox" id="pdf-include-interp" checked onchange="syncInterpToggle('pdf')"><span class="toggle-slider"></span></label>
+          <span style="font-weight:500">Includi interpretazione automatica nel referto</span>
+        </div>
+        <div id="lib-status" style="margin-top:12px"></div>
+        <div class="actions-bar" style="justify-content:center;padding-top:24px;flex-direction:column;align-items:center;gap:12px">
+          <button class="btn btn-accent btn-lg" id="btn-gen-pdf" onclick="generatePDF()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Genera PDF
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="downloadHTML()" title="Scarica l'app HTML per usarla offline con piena funzionalità PDF">💾 Scarica app HTML (per uso offline)</button>
+        </div>
+      </div>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-outline" onclick="showSection('results')">← Torna ai risultati</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SECTION: ARCHIVE ═══════════ -->
+  <div id="section-archive" class="hidden fade-in">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:var(--primary-pale);color:var(--primary)">🗃️</div>
+        <h2>Archivio Pazienti e Referti</h2>
+      </div>
+      <div class="card-body">
+        <div id="archive-stats" class="db-stats"></div>
+        <input type="text" class="db-search" id="archive-search" placeholder="Cerca per cognome, nome, codice fiscale, data..." oninput="renderArchive()">
+        <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="exportArchive()">📥 Esporta archivio (JSON)</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file').click()">📤 Importa archivio</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importArchive(event)">
+          <button class="btn btn-danger-outline btn-sm" onclick="clearArchive()">🗑️ Svuota archivio</button>
+        </div>
+        <div id="archive-list" class="db-list"></div>
+      </div>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-primary btn-lg" onclick="showSection('setup')">← Nuovo referto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden canvases for PDF chart rendering -->
+<canvas id="pdfGlycCanvas" style="display:none" width="460" height="440"></canvas>
+<canvas id="pdfInsCanvas" style="display:none" width="460" height="440"></canvas>
+
+<!-- JS Modules (load order matters) -->
+<script src="js/state.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/config.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/data-entry.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/results.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/database.js"></script>
+<script src="js/pdf-generator.js"></script>
+<script src="js/init.js"></script>
+</body>
+</html>
