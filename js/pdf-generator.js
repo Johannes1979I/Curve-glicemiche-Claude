@@ -54,9 +54,9 @@ async function generatePDF() {
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(45, 90, 61);
     const title = document.getElementById('pdf-title').value || 'Referto Curva da Carico Orale di Glucosio';
     doc.text(title, W / 2, y, { align: 'center' });
-    y += 4.5;
+    y += 5;
     doc.setDrawColor(45, 90, 61); doc.setLineWidth(0.4); doc.line(M, y, W - M, y);
-    y += 3;
+    y += 3.5;
 
     // ═══════════════════════════════════════
     //  PATIENT DATA (2 columns, compact)
@@ -74,42 +74,43 @@ async function generatePDF() {
       doc.setFont('helvetica', 'normal'); doc.text(r[1], M + 20, y);
       doc.setFont('helvetica', 'bold'); doc.text(r[2] + ':', c2, y);
       doc.setFont('helvetica', 'normal'); doc.text(r[3], c2 + 20, y);
-      y += 3.2;
+      y += 3.8;
     });
-    y += 1;
+    y += 1.5;
 
     // ═══════════════════════════════════════
     //  EXAM INFO BAR
     // ═══════════════════════════════════════
     const preset = state.preset ? PRESETS.find(p => p.id === state.preset) : null;
-    doc.setFillColor(45, 90, 61); doc.rect(M, y, usable, 4.5, 'F');
+    doc.setFillColor(45, 90, 61); doc.rect(M, y, usable, 5.5, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
     let examText = 'ESAME: ' + (preset ? preset.name : 'Curva Personalizzata') + '   |   Carico: ' + document.getElementById('cfg-glucose-load').value + 'g glucosio';
     if (state.isPregnant) examText += '   |   Criteri IADPSG/ADA 2026 (Gravidanza)';
-    doc.text(examText, M + 2, y + 3.2);
-    y += 6;
+    doc.text(examText, M + 2, y + 3.8);
+    y += 7.5;
 
     // ═══════════════════════════════════════
     //  FULL-WIDTH DATA TABLES
     // ═══════════════════════════════════════
-    const colPosT = [0, 0.14, 0.34, 0.56, 0.80]; // tempo, risultato, rif, esito
-    const rowH = 3.2;
+    const colPosT = [0, 0.15, 0.35, 0.58, 0.82]; // tempo, risultato, rif, esito
+    const rowH = 4.5;
+    const headerH = 5;
 
     function drawFullWidthTable(times, values, refs, unit, label, accentColor) {
       // Section label
       doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...accentColor);
-      doc.text(label, M, y); y += 1;
+      doc.text(label, M, y); y += 2.5;
 
       // Header row with accent background
       doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
-      doc.rect(M, y, usable, rowH + 0.6, 'F');
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(255, 255, 255);
-      const hy = y + 2.5;
+      doc.rect(M, y, usable, headerH, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(255, 255, 255);
+      const hy = y + 3.5;
       doc.text('Tempo', M + usable * colPosT[0] + 2, hy);
       doc.text('Risultato', M + usable * colPosT[1] + 2, hy);
       doc.text('Val. Riferimento', M + usable * colPosT[2] + 2, hy);
       doc.text('Esito', M + usable * colPosT[4] + 2, hy);
-      y += rowH + 1;
+      y += headerH + 0.5;
 
       // Data rows
       times.forEach((t, i) => {
@@ -121,27 +122,27 @@ async function generatePDF() {
         }
 
         // Alternating row background
-        if (i % 2 === 0) { doc.setFillColor(247, 248, 250); doc.rect(M, y - 2.2, usable, rowH, 'F'); }
+        if (i % 2 === 0) { doc.setFillColor(247, 248, 250); doc.rect(M, y, usable, rowH, 'F'); }
 
-        const ry = y;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(30, 30, 30);
+        const ry = y + 3.2; // text baseline inside row
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(30, 30, 30);
         doc.text(t === 0 ? 'Basale' : t + "'", M + usable * colPosT[0] + 2, ry);
 
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
         doc.text(String(v !== undefined && v !== null && v !== '' ? v : '\u2014'), M + usable * colPosT[1] + 2, ry);
 
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(100, 100, 100);
         doc.text(ref.min + ' \u2013 ' + ref.max + ' ' + unit, M + usable * colPosT[2] + 2, ry);
 
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(...statusCol);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...statusCol);
         doc.text(statusTxt, M + usable * colPosT[4] + 2, ry);
 
         y += rowH;
       });
 
       // Bottom line
-      doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.15); doc.line(M, y - 0.5, W - M, y - 0.5);
-      y += 1.5;
+      doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.15); doc.line(M, y + 0.5, W - M, y + 0.5);
+      y += 2.5;
     }
 
     if (hasGlyc) {
@@ -156,10 +157,10 @@ async function generatePDF() {
     // ═══════════════════════════════════════
     const meth = document.getElementById('methodology').value;
     if (meth) {
-      doc.setFontSize(5); doc.setTextColor(130, 130, 130); doc.setFont('helvetica', 'italic');
+      doc.setFontSize(5.5); doc.setTextColor(130, 130, 130); doc.setFont('helvetica', 'italic');
       const mLines = doc.splitTextToSize('Metodica: ' + meth.replace(/\n/g, ' \u2014 '), usable);
-      mLines.slice(0, 2).forEach(l => { doc.text(l, M, y); y += 2; });
-      y += 1;
+      mLines.slice(0, 2).forEach(l => { doc.text(l, M, y); y += 2.3; });
+      y += 1.5;
     }
 
     // ═══════════════════════════════════════
@@ -172,7 +173,7 @@ async function generatePDF() {
 
       if (y + chartH + 6 > H - 18) { doc.addPage(); y = M; }
 
-      doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.1); doc.line(M, y, W - M, y); y += 2;
+      doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.1); doc.line(M, y, W - M, y); y += 3;
 
       let cx = M;
       if (hasGlyc && state.glycValues.some(v => v > 0)) {
@@ -180,11 +181,11 @@ async function generatePDF() {
           if (!bothCurves) cx = M + (usable - chartW) / 2;
           const glycImg = await renderChartToImage(state.glycTimes, state.glycValues, state.glycRefs,
             { label: 'Glicemia', unit: glycUnit, color: '#2d5a3d', refColor: 'rgba(45,90,61,0.15)', borderRef: 'rgba(45,90,61,0.4)' }, 'pdfGlycCanvas');
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(45, 90, 61);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 90, 61);
           doc.text('CURVA GLICEMICA', cx + chartW / 2, y, { align: 'center' });
           doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.15);
-          doc.rect(cx, y + 1, chartW, chartH, 'S');
-          doc.addImage(glycImg, 'PNG', cx + 0.3, y + 1.3, chartW - 0.6, chartH - 0.6);
+          doc.rect(cx, y + 1.5, chartW, chartH, 'S');
+          doc.addImage(glycImg, 'PNG', cx + 0.3, y + 1.8, chartW - 0.6, chartH - 0.6);
           cx += chartW + chartGap;
         } catch(e) { console.warn('Glyc chart error:', e); }
       }
@@ -193,24 +194,24 @@ async function generatePDF() {
           if (!hasGlyc) cx = M + (usable - chartW) / 2;
           const insImg = await renderChartToImage(state.insTimes, state.insValues, state.insRefs,
             { label: 'Insulinemia', unit: insUnit, color: '#c4563a', refColor: 'rgba(196,86,58,0.12)', borderRef: 'rgba(196,86,58,0.35)' }, 'pdfInsCanvas');
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(196, 86, 58);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(196, 86, 58);
           doc.text('CURVA INSULINEMICA', cx + chartW / 2, y, { align: 'center' });
           doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.15);
-          doc.rect(cx, y + 1, chartW, chartH, 'S');
-          doc.addImage(insImg, 'PNG', cx + 0.3, y + 1.3, chartW - 0.6, chartH - 0.6);
+          doc.rect(cx, y + 1.5, chartW, chartH, 'S');
+          doc.addImage(insImg, 'PNG', cx + 0.3, y + 1.8, chartW - 0.6, chartH - 0.6);
         } catch(e) { console.warn('Ins chart error:', e); }
       }
-      y += chartH + 4;
+      y += chartH + 5;
     }
 
     // ═══════════════════════════════════════
     //  EXTENDED DIAGNOSTIC INTERPRETATION
     // ═══════════════════════════════════════
     if (includeInterp) {
-      doc.setDrawColor(45, 90, 61); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 3;
+      doc.setDrawColor(45, 90, 61); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 3.5;
 
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(45, 90, 61);
-      doc.text('INTERPRETAZIONE DIAGNOSTICA', M, y); y += 3.5;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(45, 90, 61);
+      doc.text('INTERPRETAZIONE DIAGNOSTICA', M, y); y += 4.5;
 
       const t0i = state.glycTimes.indexOf(0);
       const t60i = state.glycTimes.indexOf(60);
@@ -230,30 +231,31 @@ async function generatePDF() {
         const c = colors[level] || colors.normal;
 
         doc.setFontSize(6.5); doc.setFont('helvetica', 'normal');
-        const lines = doc.splitTextToSize(text, usable - 8);
-        const boxH = lines.length * 2.5 + 2;
+        const lines = doc.splitTextToSize(text, usable - 10);
+        const lineH = 2.8;
+        const boxH = lines.length * lineH + 3.5;
 
         if (y + boxH > H - 18) { doc.addPage(); y = M; }
 
         // Box background
         doc.setFillColor(...c.bg); doc.setDrawColor(...c.border); doc.setLineWidth(0.3);
-        doc.roundedRect(M, y - 1, usable, boxH, 1.2, 1.2, 'FD');
+        doc.roundedRect(M, y, usable, boxH, 1.2, 1.2, 'FD');
 
         // Left accent bar
-        doc.setFillColor(...c.border); doc.rect(M, y - 1, 1.2, boxH, 'F');
+        doc.setFillColor(...c.border); doc.rect(M, y, 1.5, boxH, 'F');
 
         // Text
         doc.setTextColor(...c.text);
         lines.forEach((l, i) => {
-          doc.text(l, M + 3, y + 1.2 + i * 2.5);
+          doc.text(l, M + 4, y + 2.5 + i * lineH);
         });
-        y += boxH + 1.5;
+        y += boxH + 2;
       }
 
       // ── Glycemic interpretation ──
       if (hasGlyc) {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(45, 90, 61);
-        doc.text('Curva Glicemica:', M, y); y += 2.5;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 90, 61);
+        doc.text('Curva Glicemica:', M, y); y += 3.5;
 
         if (state.isPregnant) {
           // GDM — IADPSG / ADA 2026
@@ -308,8 +310,8 @@ async function generatePDF() {
 
       // ── Insulin interpretation ──
       if (hasIns && state.insValues.some(v => v > 0)) {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(196, 86, 58);
-        doc.text('Curva Insulinemica:', M, y); y += 2.5;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(196, 86, 58);
+        doc.text('Curva Insulinemica:', M, y); y += 3.5;
 
         const t0ins = state.insValues[0] || 0;
         const peakVal = Math.max(...state.insValues);
@@ -347,12 +349,12 @@ async function generatePDF() {
     //  SOURCES / REFERENCES
     // ═══════════════════════════════════════
     if (includeInterp) {
-      if (y + 10 > H - 14) { doc.addPage(); y = M; }
-      y += 1;
-      doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.1); doc.line(M, y, W - M, y); y += 2;
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(5); doc.setTextColor(100, 100, 100);
-      doc.text('FONTI E RIFERIMENTI BIBLIOGRAFICI', M, y); y += 2;
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(4.5); doc.setTextColor(130, 130, 130);
+      if (y + 12 > H - 14) { doc.addPage(); y = M; }
+      y += 2;
+      doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.1); doc.line(M, y, W - M, y); y += 2.5;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(100, 100, 100);
+      doc.text('FONTI E RIFERIMENTI BIBLIOGRAFICI', M, y); y += 2.5;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(5); doc.setTextColor(130, 130, 130);
       const sources = [
         '1. ADA Standards of Care in Diabetes 2026 - Section 2: Diagnosis and Classification. Diabetes Care 2026; 49(Suppl 1): S27. doi: 10.2337/dc26-S002',
         '2. IDF Position Statement on the 1-hour post-load plasma glucose (1-h PG) for diagnosis of intermediate hyperglycaemia and type 2 diabetes.',
@@ -360,7 +362,7 @@ async function generatePDF() {
         '3. IADPSG Consensus Panel. Diabetes Care 2010; 33(3):676-682. Criteri confermati in ADA Standards of Care 2026.',
       ];
       sources.forEach(s => {
-        doc.splitTextToSize(s, usable).forEach(l => { doc.text(l, M, y); y += 1.8; });
+        doc.splitTextToSize(s, usable).forEach(l => { doc.text(l, M, y); y += 2.2; });
       });
     }
 
