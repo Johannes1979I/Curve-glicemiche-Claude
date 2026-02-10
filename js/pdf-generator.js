@@ -87,7 +87,7 @@ async function generatePDF() {
     let examText = 'ESAME: ' + (preset ? preset.name : 'Curva Personalizzata') + '   |   Carico: ' + document.getElementById('cfg-glucose-load').value + 'g glucosio';
     if (state.isPregnant) examText += '   |   Criteri IADPSG/ADA 2026 (Gravidanza)';
     doc.text(examText, M + 2, y + 3.8);
-    y += 7.5;
+    y += 9.5;
 
     // ═══════════════════════════════════════
     //  FULL-WIDTH DATA TABLES
