@@ -93,24 +93,24 @@ async function generatePDF() {
     //  FULL-WIDTH DATA TABLES
     // ═══════════════════════════════════════
     const colPosT = [0, 0.15, 0.35, 0.58, 0.82]; // tempo, risultato, rif, esito
-    const rowH = 4.5;
-    const headerH = 5;
+    const rowH = 5;
+    const headerH = 5.5;
 
     function drawFullWidthTable(times, values, refs, unit, label, accentColor) {
       // Section label
       doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...accentColor);
-      doc.text(label, M, y); y += 2.5;
+      doc.text(label, M, y); y += 3;
 
       // Header row with accent background
       doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
       doc.rect(M, y, usable, headerH, 'F');
       doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(255, 255, 255);
-      const hy = y + 3.5;
+      const hy = y + 3.8;
       doc.text('Tempo', M + usable * colPosT[0] + 2, hy);
       doc.text('Risultato', M + usable * colPosT[1] + 2, hy);
       doc.text('Val. Riferimento', M + usable * colPosT[2] + 2, hy);
       doc.text('Esito', M + usable * colPosT[4] + 2, hy);
-      y += headerH + 0.5;
+      y += headerH + 0.8;
 
       // Data rows
       times.forEach((t, i) => {
@@ -124,7 +124,7 @@ async function generatePDF() {
         // Alternating row background
         if (i % 2 === 0) { doc.setFillColor(247, 248, 250); doc.rect(M, y, usable, rowH, 'F'); }
 
-        const ry = y + 3.2; // text baseline inside row
+        const ry = y + 3.5; // text baseline inside row
         doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(30, 30, 30);
         doc.text(t === 0 ? 'Basale' : t + "'", M + usable * colPosT[0] + 2, ry);
 
@@ -142,14 +142,14 @@ async function generatePDF() {
 
       // Bottom line
       doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.15); doc.line(M, y + 0.5, W - M, y + 0.5);
-      y += 2.5;
+      y += 3.5;
     }
 
     if (hasGlyc) {
       drawFullWidthTable(state.glycTimes, state.glycValues, state.glycRefs, glycUnit, 'CURVA GLICEMICA', [45, 90, 61]);
     }
     if (hasIns) {
-      drawFullWidthTable(state.insTimes, state.insValues, state.insRefs, insUnit, 'CURVA INSULINEMICA', [196, 86, 58]);
+      drawFullWidthTable(state.insTimes, state.insValues, state.insRefs, insUnit, 'CURVA INSULINEMICA', [41, 128, 185]);
     }
 
     // ═══════════════════════════════════════
@@ -193,8 +193,8 @@ async function generatePDF() {
         try {
           if (!hasGlyc) cx = M + (usable - chartW) / 2;
           const insImg = await renderChartToImage(state.insTimes, state.insValues, state.insRefs,
-            { label: 'Insulinemia', unit: insUnit, color: '#c4563a', refColor: 'rgba(196,86,58,0.12)', borderRef: 'rgba(196,86,58,0.35)' }, 'pdfInsCanvas');
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(196, 86, 58);
+            { label: 'Insulinemia', unit: insUnit, color: '#2980b9', refColor: 'rgba(41,128,185,0.12)', borderRef: 'rgba(41,128,185,0.35)' }, 'pdfInsCanvas');
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(41, 128, 185);
           doc.text('CURVA INSULINEMICA', cx + chartW / 2, y, { align: 'center' });
           doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.15);
           doc.rect(cx, y + 1.5, chartW, chartH, 'S');
@@ -310,7 +310,7 @@ async function generatePDF() {
 
       // ── Insulin interpretation ──
       if (hasIns && state.insValues.some(v => v > 0)) {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(196, 86, 58);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(41, 128, 185);
         doc.text('Curva Insulinemica:', M, y); y += 3.5;
 
         const t0ins = state.insValues[0] || 0;

@@ -19,7 +19,7 @@ function renderCharts() {
     const ctx2 = document.getElementById('insChart').getContext('2d');
     state.insChart = createCurveChart(ctx2, state.insTimes, state.insValues, state.insRefs, {
       label: 'Insulinemia', unit: document.getElementById('cfg-ins-unit').value,
-      color: '#c4563a', refColor: 'rgba(196,86,58,0.10)', borderRef: 'rgba(196,86,58,0.30)',
+      color: '#2980b9', refColor: 'rgba(41,128,185,0.10)', borderRef: 'rgba(41,128,185,0.30)',
     });
   } else { insCard.classList.add('hidden'); }
 }

@@ -10,8 +10,8 @@
   --primary: #2d5a3d;
   --primary-light: #3d7a52;
   --primary-pale: #e8f0eb;
-  --accent: #c4563a;
-  --accent-pale: #fdf0ed;
+  --accent: #2980b9;
+  --accent-pale: #eaf4fb;
   --text: #1a1a1a;
   --text-secondary: #5a5a5a;
   --text-muted: #8a8a8a;
@@ -101,7 +101,7 @@ body {
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .btn-accent { background: var(--accent); color: white; }
-.btn-accent:hover { background: #b3482e; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-accent:hover { background: #2471a3; transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
 .btn-outline:hover { background: var(--primary-pale); }
 .btn-danger-outline { background: transparent; color: var(--danger); border: 1.5px solid var(--danger); }
