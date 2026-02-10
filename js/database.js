@@ -86,7 +86,6 @@ function loadReport(id) {
   state.glycRefs = JSON.parse(JSON.stringify(rec.results.glycRefs));
   state.insRefs = JSON.parse(JSON.stringify(rec.results.insRefs));
 
-  document.getElementById('toggle-pregnant').checked = state.isPregnant;
   document.getElementById('toggle-combined').checked = state.isCombined;
   document.getElementById('cfg-glucose-load').value = rec.config.glucoseLoad;
   document.getElementById('cfg-glyc-unit').value = rec.config.glycUnit;

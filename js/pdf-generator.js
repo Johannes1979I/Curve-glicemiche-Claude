@@ -37,7 +37,7 @@ async function generatePDF() {
         const imgW = usable, imgH = Math.min(imgW / aspect, 28);
         const fmt = state.headerImage.includes('image/png') ? 'PNG' : 'JPEG';
         doc.addImage(state.headerImage, fmt, M, y, imgW, imgH);
-        y += imgH + 2;
+        y += imgH + 6;
       } catch(e) { console.warn('Header image error:', e); }
     }
 
@@ -137,29 +137,56 @@ async function generatePDF() {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(30, 30, 30);
 
       if (hasGlyc) {
+        const t0i = state.glycTimes.indexOf(0);
+        const t60i = state.glycTimes.indexOf(60);
         const t120i = state.glycTimes.indexOf(120);
-        if (t120i >= 0) {
-          const v120 = state.glycValues[t120i]; let txt = '';
-          if (state.isPregnant) {
-            const v0 = state.glycTimes.indexOf(0) >= 0 ? state.glycValues[state.glycTimes.indexOf(0)] : 0;
-            const v60 = state.glycTimes.indexOf(60) >= 0 ? state.glycValues[state.glycTimes.indexOf(60)] : 0;
-            txt = (v0 >= 92 || v60 >= 180 || v120 >= 153)
-              ? 'Almeno un valore supera i limiti IADPSG → Diabete gestazionale. Valutazione specialistica raccomandata.'
-              : 'Screening negativo per diabete gestazionale (criteri IADPSG).';
-          } else {
-            if (v120 < 140) txt = 'Tolleranza glucidica nella norma (120 min < 140 mg/dL).';
-            else if (v120 < 200) txt = 'Ridotta tolleranza al glucosio - IGT (120 min: 140-199 mg/dL). Pre-diabete.';
-            else txt = 'Indicativo per Diabete Mellito (120 min ≥ 200 mg/dL). Conferma raccomandata.';
+        const v0 = t0i >= 0 ? state.glycValues[t0i] : null;
+        const v60 = t60i >= 0 ? state.glycValues[t60i] : null;
+        const v120 = t120i >= 0 ? state.glycValues[t120i] : null;
+        const lines = [];
+
+        if (state.isPregnant) {
+          // IADPSG / ADA 2026
+          const gdm = (v0 !== null && v0 >= DIAG.gdm_fasting) || (v60 !== null && v60 >= DIAG.gdm_60) || (v120 !== null && v120 >= DIAG.gdm_120);
+          lines.push(gdm
+            ? 'GDM (IADPSG/ADA 2026): Almeno un valore supera i limiti diagnostici. Diabete gestazionale. Valutazione specialistica.'
+            : 'Screening negativo per diabete gestazionale (criteri IADPSG/ADA 2026).');
+        } else {
+          // Fasting — ADA 2026
+          if (v0 !== null) {
+            if (v0 >= DIAG.fasting_diabetes) lines.push('Basale: ' + v0 + ' mg/dL >= ' + DIAG.fasting_diabetes + ' — Indicativo per Diabete Mellito (ADA 2026).');
+            else if (v0 >= DIAG.fasting_ifg) lines.push('Basale: ' + v0 + ' mg/dL — IFG, alterata glicemia a digiuno, pre-diabete (ADA 2026).');
           }
-          doc.splitTextToSize('Glicemia: ' + txt, usable).forEach(l => { doc.text(l, M, y); y += 2.5; });
+          // 60' — IDF 2024
+          if (v60 !== null) {
+            if (v60 >= DIAG.t60_diabetes) lines.push("60': " + v60 + ' mg/dL >= ' + DIAG.t60_diabetes + ' — Indicativo per DM tipo 2 (criterio IDF 2024, 1-h PG).');
+            else if (v60 >= DIAG.t60_ih) lines.push("60': " + v60 + ' mg/dL >= ' + DIAG.t60_ih + ' — Iperglicemia intermedia IDF 2024. Rischio aumentato.');
+          }
+          // 120' — ADA 2026
+          if (v120 !== null) {
+            if (v120 >= DIAG.t120_diabetes) lines.push("120': " + v120 + ' mg/dL >= ' + DIAG.t120_diabetes + ' — Indicativo per Diabete Mellito (ADA 2026).');
+            else if (v120 >= DIAG.t120_igt) lines.push("120': " + v120 + ' mg/dL — IGT, ridotta tolleranza al glucosio, pre-diabete (ADA 2026).');
+            else lines.push("120': " + v120 + ' mg/dL — Tolleranza glucidica nella norma (ADA 2026).');
+          }
+          if (lines.length === 0) lines.push('Tolleranza glucidica nella norma.');
         }
+        lines.forEach(l => {
+          doc.splitTextToSize('Glicemia: ' + l, usable).forEach(sl => { doc.text(sl, M, y); y += 2.5; });
+        });
       }
       if (hasIns && state.insValues.some(v => v > 0)) {
         const pk = Math.max(...state.insValues); const pt = state.insTimes[state.insValues.indexOf(pk)];
         let txt = 'Picco a ' + pt + "' (" + pk + ' ' + insUnit + ').';
         if (pt > 60) txt += ' Picco ritardato — possibile insulino-resistenza.';
+        if (state.insValues[0] > 25) txt += ' Iperinsulinemia basale (' + state.insValues[0] + ').';
         doc.splitTextToSize('Insulinemia: ' + txt, usable).forEach(l => { doc.text(l, M, y); y += 2.5; });
       }
+
+      // Source footnote in PDF
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(5); doc.setTextColor(130, 130, 130);
+      const srcLine = 'Rif.: ADA Standards of Care 2026 (Diabetes Care 49, Suppl 1) | IDF Position Statement 2024 (1-h PG, ATTD Florence)';
+      doc.text(srcLine, M, y + 1); y += 3;
+
       y += 1;
     }
 

@@ -199,3 +199,9 @@ body {
   .section-tab { min-width: 70px; font-size: 11px; padding: 8px 4px; }
   .db-stats { flex-direction: column; }
 }
+
+/* ── Custom Curve Builder ── */
+.cc-time-field { display: flex; flex-direction: column; gap: 2px; }
+.cc-time-field label { font-size: 11px; font-weight: 600; color: var(--text-muted, #888); text-transform: uppercase; }
+.cc-time-field input { padding: 6px 8px; border: 1px solid var(--border, #e2e8f0); border-radius: 5px; font-size: 13px; text-align: center; }
+#cc-times-container { display: flex; flex-wrap: wrap; gap: 8px; }

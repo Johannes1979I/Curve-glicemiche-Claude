@@ -67,12 +67,23 @@
         <div class="preset-grid" id="preset-grid"></div>
         <div class="divider"></div>
         <div class="toggle-row">
-          <label class="toggle-switch"><input type="checkbox" id="toggle-pregnant" onchange="togglePregnant()"><span class="toggle-slider"></span></label>
-          <span style="font-weight:500">Valori di riferimento per donna in gravidanza</span>
-        </div>
-        <div class="toggle-row">
           <label class="toggle-switch"><input type="checkbox" id="toggle-combined" onchange="toggleCombined()"><span class="toggle-slider"></span></label>
           <span style="font-weight:500">Curva combinata Glicemica + Insulinemica</span>
+        </div>
+
+        <!-- Custom Curve Builder -->
+        <div id="custom-curve-panel" class="hidden" style="margin-top:16px;padding:16px;background:var(--surface-alt,#f7f8fa);border-radius:10px;border:1px solid var(--border,#e2e8f0)">
+          <h4 style="font-size:14px;font-weight:700;color:var(--primary);margin-bottom:10px">Configura Curva Personalizzata</h4>
+          <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Numero punti</label>
+              <input type="number" id="cc-num-points" min="2" max="10" value="5" onchange="onCustomPointsChange()" style="width:80px">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="applyCustomCurve()">Applica Curva</button>
+          </div>
+          <div id="cc-times-container" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+          <div id="cc-feedback" class="hidden" style="margin-top:8px;padding:8px 12px;background:#d4edda;border-radius:6px;font-size:12px;color:#155724;font-weight:500"></div>
+          <p style="font-size:11px;color:var(--text-muted,#888);margin-top:8px;line-height:1.4">I valori di riferimento verranno generati automaticamente per interpolazione dalle tabelle ADA 2026 / IDF 2024. Se attivi la curva combinata, i tempi scelti verranno applicati anche alla curva insulinemica.</p>
         </div>
       </div>
     </div>
