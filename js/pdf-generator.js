@@ -92,50 +92,50 @@ async function generatePDF() {
     // ═══════════════════════════════════════
     //  FULL-WIDTH DATA TABLES
     // ═══════════════════════════════════════
-    const colPosT = [0, 0.15, 0.35, 0.58, 0.82]; // tempo, risultato, rif, esito
+    const col = { tempo: 0, valore: 0.14, refMin: 0.34, refMax: 0.54, stato: 0.74 };
     const rowH = 5;
     const headerH = 5.5;
 
     function drawFullWidthTable(times, values, refs, unit, label, accentColor) {
-      // Section label
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...accentColor);
-      doc.text(label, M, y); y += 3;
+      // Section label (bold, colored, with unit)
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...accentColor);
+      doc.text(label + ' (' + unit + ')', M, y); y += 3;
 
-      // Header row with accent background
-      doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
-      doc.rect(M, y, usable, headerH, 'F');
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(255, 255, 255);
-      const hy = y + 3.8;
-      doc.text('Tempo', M + usable * colPosT[0] + 2, hy);
-      doc.text('Risultato', M + usable * colPosT[1] + 2, hy);
-      doc.text('Val. Riferimento', M + usable * colPosT[2] + 2, hy);
-      doc.text('Esito', M + usable * colPosT[4] + 2, hy);
-      y += headerH + 0.8;
+      // Header row — light style: bold text + colored underline
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(50, 50, 50);
+      const hy = y + 3.5;
+      doc.text('Tempo', M + usable * col.tempo + 2, hy);
+      doc.text('Valore', M + usable * col.valore + 2, hy);
+      doc.text('Ref min', M + usable * col.refMin + 2, hy);
+      doc.text('Ref max', M + usable * col.refMax + 2, hy);
+      doc.text('Stato', M + usable * col.stato + 2, hy);
+      y += headerH;
+      doc.setDrawColor(...accentColor); doc.setLineWidth(0.4); doc.line(M, y, W - M, y);
+      y += 1;
 
       // Data rows
       times.forEach((t, i) => {
         const v = values[i]; const ref = refs[t] || { min: 0, max: 999 };
-        let statusTxt = 'Normale', statusCol = [39, 174, 96];
+        let statusTxt = 'OK', statusCol = [39, 174, 96];
         if (v !== undefined && v !== null && v !== '') {
-          if (v < ref.min) { statusTxt = 'Inferiore'; statusCol = [212, 160, 23]; }
-          if (v > ref.max) { statusTxt = 'Superiore'; statusCol = [192, 57, 43]; }
+          if (v < ref.min) { statusTxt = 'BASSO'; statusCol = [192, 57, 43]; }
+          if (v > ref.max) { statusTxt = 'ALTO'; statusCol = [192, 57, 43]; }
         }
 
-        // Alternating row background
-        if (i % 2 === 0) { doc.setFillColor(247, 248, 250); doc.rect(M, y, usable, rowH, 'F'); }
+        // Subtle separator between rows
+        if (i > 0) { doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.1); doc.line(M, y, W - M, y); }
 
-        const ry = y + 3.5; // text baseline inside row
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(30, 30, 30);
-        doc.text(t === 0 ? 'Basale' : t + "'", M + usable * colPosT[0] + 2, ry);
-
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-        doc.text(String(v !== undefined && v !== null && v !== '' ? v : '\u2014'), M + usable * colPosT[1] + 2, ry);
-
+        const ry = y + 3.5;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(30, 30, 30);
+        doc.text(t === 0 ? "0'" : t + "'", M + usable * col.tempo + 2, ry);
+        const vStr = (v !== undefined && v !== null && v !== '') ? Number(v).toFixed(1) : '\u2014';
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+        doc.text(vStr, M + usable * col.valore + 2, ry);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(100, 100, 100);
-        doc.text(ref.min + ' \u2013 ' + ref.max + ' ' + unit, M + usable * colPosT[2] + 2, ry);
-
+        doc.text(Number(ref.min).toFixed(1), M + usable * col.refMin + 2, ry);
+        doc.text(Number(ref.max).toFixed(1), M + usable * col.refMax + 2, ry);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...statusCol);
-        doc.text(statusTxt, M + usable * colPosT[4] + 2, ry);
+        doc.text(statusTxt, M + usable * col.stato + 2, ry);
 
         y += rowH;
       });
@@ -220,36 +220,22 @@ async function generatePDF() {
       const v60 = t60i >= 0 ? state.glycValues[t60i] : null;
       const v120 = t120i >= 0 ? state.glycValues[t120i] : null;
 
-      // Helper: draw a colored interpretation box
+      // Helper: write interpretation as simple text line (no colored box)
       function drawInterpBox(text, level) {
-        // level: 'normal'=green, 'warning'=amber, 'danger'=red
         const colors = {
-          normal:  { bg: [235, 248, 240], border: [39, 174, 96], text: [20, 80, 40] },
-          warning: { bg: [255, 248, 230], border: [212, 160, 23], text: [120, 90, 0] },
-          danger:  { bg: [255, 235, 235], border: [192, 57, 43], text: [140, 30, 20] },
+          normal:  [20, 80, 40],
+          warning: [160, 110, 0],
+          danger:  [180, 30, 20],
         };
         const c = colors[level] || colors.normal;
-
-        doc.setFontSize(6.5); doc.setFont('helvetica', 'normal');
-        const lines = doc.splitTextToSize(text, usable - 10);
-        const lineH = 2.8;
-        const boxH = lines.length * lineH + 3.5;
-
-        if (y + boxH > H - 18) { doc.addPage(); y = M; }
-
-        // Box background
-        doc.setFillColor(...c.bg); doc.setDrawColor(...c.border); doc.setLineWidth(0.3);
-        doc.roundedRect(M, y, usable, boxH, 1.2, 1.2, 'FD');
-
-        // Left accent bar
-        doc.setFillColor(...c.border); doc.rect(M, y, 1.5, boxH, 'F');
-
-        // Text
-        doc.setTextColor(...c.text);
-        lines.forEach((l, i) => {
-          doc.text(l, M + 4, y + 2.5 + i * lineH);
-        });
-        y += boxH + 2;
+        doc.setFontSize(6); doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(text, usable - 4);
+        const lineH = 2.5;
+        const blockH = lines.length * lineH + 1;
+        if (y + blockH > H - 14) return; // single page: skip if no room
+        doc.setTextColor(...c);
+        lines.forEach((l, i) => { doc.text(l, M + 2, y + i * lineH); });
+        y += blockH + 1;
       }
 
       // ── Glycemic interpretation ──
