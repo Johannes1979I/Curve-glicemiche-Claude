@@ -278,6 +278,8 @@ async function generatePDF() {
               drawInterpBox('GLICEMIA A DIGIUNO: ' + v0 + ' mg/dL (>=' + DIAG.fasting_diabetes + ' mg/dL) - Valore indicativo per Diabete Mellito secondo criteri ADA Standards of Care 2026. E necessaria conferma diagnostica con secondo test (HbA1c, OGTT ripetuto o glicemia random >=200 mg/dL con sintomi). Si consiglia invio a valutazione diabetologica.', 'danger');
             } else if (v0 >= DIAG.fasting_ifg) {
               drawInterpBox('GLICEMIA A DIGIUNO: ' + v0 + ' mg/dL (' + DIAG.fasting_ifg + '-125 mg/dL) - Alterata Glicemia a Digiuno (IFG, Impaired Fasting Glucose). Condizione di pre-diabete secondo ADA 2026. Rischio aumentato di progressione a diabete tipo 2. Si raccomandano: modifiche dello stile di vita (dieta, attivita fisica), monitoraggio glicemico periodico.', 'warning');
+            } else if (v0 < (state.glycRefs[0] || {}).min) {
+              drawInterpBox('IPOGLICEMIA A DIGIUNO: ' + v0 + ' mg/dL (<' + ((state.glycRefs[0] || {}).min || 60) + ' mg/dL) - Valore inferiore alla norma. Possibili cause: digiuno prolungato, iperinsulinismo endogeno (insulinoma), insufficienza surrenalica, epatopatia, farmaci ipoglicemizzanti. Si raccomanda approfondimento con dosaggio insulina e C-peptide a digiuno, cortisolo basale e funzionalita epatica.', 'warning');
             }
           }
 
@@ -298,6 +300,10 @@ async function generatePDF() {
               drawInterpBox("GLICEMIA A 120': " + v120 + ' mg/dL (' + DIAG.t120_igt + "-199 mg/dL) - Ridotta Tolleranza al Glucosio (IGT, Impaired Glucose Tolerance). Condizione di pre-diabete secondo ADA 2026. Rischio annuo di progressione a diabete: 5-10%. Interventi sullo stile di vita (dieta mediterranea, 150 min/sett attivita aerobica) riducono il rischio del 58%.", 'warning');
             } else {
               drawInterpBox("GLICEMIA A 120': " + v120 + ' mg/dL (<' + DIAG.t120_igt + " mg/dL) - Tolleranza glucidica nella norma secondo criteri ADA Standards of Care 2026.", 'normal');
+            }
+            // Ipoglicemia reattiva
+            if (v120 < 55) {
+              drawInterpBox("IPOGLICEMIA REATTIVA A 120': " + v120 + " mg/dL (<55 mg/dL) - Valore suggestivo per ipoglicemia reattiva post-prandiale. Possibili cause: eccessiva risposta insulinica, sindrome da dumping, forme funzionali. Valutare correlazione con sintomatologia (tremori, sudorazione, tachicardia).", 'warning');
             }
           }
 
@@ -323,6 +329,16 @@ async function generatePDF() {
         // Fasting hyperinsulinemia
         if (t0ins > 25) {
           drawInterpBox('IPERINSULINEMIA BASALE: insulinemia a digiuno ' + t0ins + ' uUI/mL (>25 uUI/mL). Indicativa per insulino-resistenza. Si suggerisce calcolo indice HOMA-IR e valutazione sindrome metabolica.', 'warning');
+        }
+
+        // Fasting hypoinsulinemia
+        if (t0ins > 0 && t0ins < (state.insRefs[0] || {}).min) {
+          drawInterpBox('IPOINSULINEMIA BASALE: ' + t0ins + ' uUI/mL (<' + ((state.insRefs[0] || {}).min || 2) + ' uUI/mL). Valore inferiore alla norma. Possibile ridotta riserva beta-cellulare o deficit insulinico iniziale (diabete tipo 1 latente/LADA). Si raccomanda dosaggio anticorpi anti-GAD, anti-IA2 e C-peptide per caratterizzazione.', 'warning');
+        }
+
+        // Insufficient insulin response to glucose load
+        if (peakVal < 20 && state.insTimes.length >= 2) {
+          drawInterpBox('RISPOSTA INSULINICA INSUFFICIENTE: picco massimo ' + peakVal + " uUI/mL (<20). Risposta beta-cellulare al carico di glucosio marcatamente ridotta. Sospetto deficit secretorio (LADA, MODY, esaurimento beta-cellulare). Raccomandato dosaggio C-peptide basale e stimolato, anticorpi anti-GAD e anti-IA2.", 'danger');
         }
 
         // Peak analysis

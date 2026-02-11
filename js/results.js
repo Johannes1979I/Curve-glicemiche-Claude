@@ -55,6 +55,8 @@ function renderResultsSummary() {
           findings.push({ level: 'danger', text: 'Glicemia a digiuno ≥' + DIAG.fasting_diabetes + ' mg/dL (' + v0 + ' mg/dL) — indicativa per Diabete Mellito (ADA 2026). Necessaria conferma diagnostica.' });
         } else if (v0 >= DIAG.fasting_ifg) {
           findings.push({ level: 'warning', text: 'Glicemia a digiuno ' + v0 + ' mg/dL — Alterata glicemia a digiuno (IFG, 100-125 mg/dL). Condizione di pre-diabete (ADA 2026).' });
+        } else if (v0 < (state.glycRefs[0] || {}).min) {
+          findings.push({ level: 'warning', text: 'Ipoglicemia a digiuno: ' + v0 + ' mg/dL (<' + ((state.glycRefs[0] || {}).min || 60) + ' mg/dL). Possibili cause: digiuno prolungato, iperinsulinismo endogeno, insufficienza surrenalica, epatopatia. Si raccomanda approfondimento clinico.' });
         }
       }
 
@@ -73,6 +75,9 @@ function renderResultsSummary() {
           findings.push({ level: 'danger', text: 'Glicemia a 120\' ≥' + DIAG.t120_diabetes + ' mg/dL (' + v120 + ' mg/dL) — indicativa per Diabete Mellito (ADA 2026). Si consiglia conferma diagnostica.' });
         } else if (v120 >= DIAG.t120_igt) {
           findings.push({ level: 'warning', text: 'Glicemia a 120\' ' + v120 + ' mg/dL — Ridotta tolleranza al glucosio (IGT, 140-199 mg/dL). Condizione di pre-diabete (ADA 2026).' });
+        }
+        if (v120 < 55) {
+          findings.push({ level: 'warning', text: 'Ipoglicemia reattiva a 120\': ' + v120 + ' mg/dL (<55 mg/dL). Valore suggestivo per ipoglicemia post-prandiale. Valutare correlazione con sintomatologia.' });
         }
       }
 
@@ -129,6 +134,16 @@ function renderResultsSummary() {
     // Fasting hyperinsulinemia
     if (t0ins > 25) {
       insFindings.push({ level: 'warning', text: 'Iperinsulinemia basale (' + t0ins + ' µUI/mL > 25 µUI/mL) — suggestiva per insulino-resistenza.' });
+    }
+
+    // Fasting hypoinsulinemia
+    if (t0ins > 0 && t0ins < (state.insRefs[0] || {}).min) {
+      insFindings.push({ level: 'warning', text: 'Ipoinsulinemia basale: ' + t0ins + ' µUI/mL (<' + ((state.insRefs[0] || {}).min || 2) + ' µUI/mL). Possibile ridotta riserva beta-cellulare o deficit insulinico iniziale (LADA). Raccomandato dosaggio anticorpi anti-GAD, anti-IA2 e C-peptide.' });
+    }
+
+    // Insufficient insulin response
+    if (peakVal < 20 && state.insTimes.length >= 2) {
+      insFindings.push({ level: 'danger', text: 'Risposta insulinica insufficiente: picco massimo ' + peakVal + ' µUI/mL (<20). Risposta beta-cellulare marcatamente ridotta. Sospetto deficit secretorio (LADA, MODY). Raccomandato dosaggio C-peptide e anticorpi anti-GAD.' });
     }
 
     // Peak timing (Kraft pattern analysis)
